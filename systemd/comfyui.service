@@ -1,0 +1,17 @@
+[Unit]
+Description=ComfyUI (music-video pipeline backend)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=@COMFY_DIR@
+# Fragmentation matters with 20+ GB weights shuttling in and out of VRAM.
+Environment=PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+ExecStart=@COMFY_DIR@/.venv/bin/python main.py --listen 127.0.0.1 --port 8188 --disable-auto-launch
+Restart=on-failure
+RestartSec=5
+# ComfyUI maps big safetensors files; let it use the RAM
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=default.target
