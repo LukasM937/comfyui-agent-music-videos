@@ -1,0 +1,47 @@
+# Defaults for a single RTX 5090 (32 GB) + 128 GB RAM box. Override per user in
+# ~/.config/mvstudio/config.toml or per project in <project>/project.toml.
+
+[comfy]
+url = "http://127.0.0.1:8188"
+dir = "~/ComfyUI"
+
+[llm]
+url = "http://127.0.0.1:8080/v1"
+model = "qwen3.8-27b"
+gguf = "~/models/llm/Qwen3.8-27B-UD-Q4_K_M.gguf"
+mmproj = "~/models/llm/mmproj-F16.gguf"
+ctx = 32768
+thinking = false
+stop_after_stage = true
+
+[audio]
+sr = 22050
+beats_per_bar = 4
+min_section_bars = 4
+
+[audio.asr]
+model = "large-v3-turbo"
+device = "cuda"
+compute_type = "float16"
+
+[image]
+width = 1920
+height = 1088
+steps = 25
+
+[video]
+default_family = "ltx-2.5"
+audio_family = "ltx-2.3"
+fps = 24
+width = 1280
+height = 704
+max_clip_s = 10.0
+min_shot_s = 1.5
+audio_conditioning = "auto"
+
+[planning]
+cut_style = "medium"
+refrain_mode = "escalate"
+max_revision_rounds = 3
+beat_tolerance_s = 0.12
+performance_ratio = 0.35

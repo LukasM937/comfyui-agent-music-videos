@@ -1,234 +1,117 @@
-# ComfyUI Agent Music Videos
+# mvstudio — audio-driven AI music videos on ComfyUI
 
-**AI Agent System for Orchestrating ComfyUI to Create Music Videos**
+You provide **a song, a rough brief, and your characters** (text and/or photos). The pipeline
+**listens to the song**, writes a **scenebook** (a shot list with exact beat-aligned timing), has a
+**script supervisor check** it against your theme and for story logic, lets **you approve** it, and
+only then renders keyframes and clips with **ComfyUI** and cuts them to the music.
 
-This repository contains comprehensive research and implementation guides for building an autonomous AI agent system that orchestrates ComfyUI to generate music videos. The system leverages local LLMs, multi-agent frameworks, and advanced image generation techniques optimized for high-end hardware.
-
----
-
-## 🎯 Project Overview
-
-This project aims to create an intelligent agent system that can:
-- Analyze music tracks and generate creative concepts
-- Orchestrate ComfyUI workflows via API for image/video generation
-- Coordinate multiple specialized agents for different aspects of video production
-- Run entirely locally on consumer hardware without cloud dependencies
-
-The implementation is designed specifically for a high-performance setup with **2x NVIDIA RTX 3090 GPUs (24GB VRAM each)** and **128GB system RAM** running **Ubuntu Linux**.
-
----
-
-## 📊 Research Quality
-
-All research documents in this repository have been thoroughly fact-checked and validated:
-
-- **Fact-Check Score: 92/100** ✅
-- Sources verified against official documentation
-- Technical accuracy validated
-- Implementation feasibility confirmed
-
----
-
-## 📚 Documentation
-
-This repository includes five comprehensive research documents covering all aspects of the system:
-
-### Core Implementation Guide
-- **[00_IMPLEMENTATION_GUIDE.md](00_IMPLEMENTATION_GUIDE.md)** - Main implementation guide with step-by-step instructions, architecture overview, and complete system design. Start here!
-
-### Technical Deep Dives
-- **[01_comfyui_api_control.md](01_comfyui_api_control.md)** - Complete guide to ComfyUI API integration, workflow automation, and programmatic control
-- **[02_local_llm_options.md](02_local_llm_options.md)** - Analysis of local LLM options optimized for dual 3090 setup, including Llama 3, Qwen, and DeepSeek models
-- **[03_agent_frameworks.md](03_agent_frameworks.md)** - Comparison of agent frameworks (LangGraph, CrewAI, AutoGen) with implementation recommendations
-- **[04_music_video_techniques.md](04_music_video_techniques.md)** - Music video generation techniques, temporal consistency methods, and creative workflows
-
-### PDF Versions
-All documents are also available as PDFs for easy offline reading and sharing:
-- `00_IMPLEMENTATION_GUIDE.pdf`
-- `01_comfyui_api_control.pdf`
-- `02_local_llm_options.pdf`
-- `03_agent_frameworks.pdf`
-- `04_music_video_techniques.pdf`
-
----
-
-## 🚀 Quick Start
-
-1. **Read the Implementation Guide**: Start with [00_IMPLEMENTATION_GUIDE.md](00_IMPLEMENTATION_GUIDE.md) for a complete overview of the system architecture and step-by-step setup instructions.
-
-2. **Review Technical Requirements**:
-   - Ubuntu Linux (tested on latest LTS)
-   - 2x NVIDIA RTX 3090 GPUs (24GB VRAM each)
-   - 128GB System RAM
-   - Python 3.10+
-   - CUDA 12.1+
-
-3. **Follow the Implementation Steps**:
-   - Set up ComfyUI with API access
-   - Install and configure local LLM (Llama 3 70B or Qwen 2.5 72B recommended)
-   - Implement agent framework (LangGraph recommended)
-   - Integrate music analysis and workflow generation
-   - Test and iterate
-
-4. **Explore Specialized Topics**: Dive into the individual research documents for detailed information on specific components.
-
----
-
-## 🏗️ System Architecture
-
-The system consists of several key components:
+Built for one box: **Arch Linux · 1× RTX 5090 (32 GB) · 128 GB RAM**.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Orchestrator Agent                    │
-│              (LLM-powered decision making)               │
-└─────────────────────────────────────────────────────────┘
-                            │
-        ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│Music Analysis│   │Workflow Gen  │   │ComfyUI API   │
-│    Agent     │   │    Agent     │   │   Controller │
-└──────────────┘   └──────────────┘   └──────────────┘
-        │                   │                   │
-        └───────────────────┴───────────────────┘
-                            ▼
-                    ┌──────────────┐
-                    │   ComfyUI    │
-                    │   (GPU 1+2)  │
-                    └──────────────┘
+song.mp3 ─┐                       ┌─────────────── human gate ───────────────┐
+brief.yaml├─► analyze ─► plan ──► check/revise ─► you read board.html ─► approve
+chars/*.jpg┘   (beats,    (director   (rules +        edit scenebook.json       │
+                sections,   LLM)        critic LLM)    or `mvs revise --note`    ▼
+                repeats,                                       refs ─► keyframes ─► clips ─► assemble ─► out/video.mp4
+                lyrics)                                      Qwen-Image-2.1     LTX-2.5 / LTX-2.3     ffmpeg, frame-exact
 ```
 
----
+## Why this design
 
-## 💻 Hardware Setup
+| Problem in typical "AI music video" scripts | What this does instead |
+|---|---|
+| The LLM invents timings; cuts land randomly | **Timing is code.** Cuts snap to the beat grid, never cross section borders, avoid slicing sung words, respect the video model's clip limit. The LLM only fills in *what* is seen. |
+| Chorus is just "another scene" | Refrains are detected (audio self-similarity **and** lyric repetition), keep the same cut pattern, and return as **identical** reuse, **variants** (same keyframe, new take) or **escalations** (same image, bigger each time). Whether a clip can be reused verbatim is decided by measuring how exactly the repeats line up. |
+| Story drifts, characters change clothes, people teleport | A **scenebook supervisor**: ~20 deterministic rules (coverage, timing, references, continuity, refrain, pacing, avoid-list) + an LLM critic for theme fit and narrative logic, in a revise loop. |
+| 6 hours of rendering before you see a bad idea | Nothing renders until you **approve** a content hash of the scenebook. Edit anything afterwards and the approval is void. |
+| Character looks change every shot | Per-character **reference images** (yours, or generated once) feed every keyframe; wardrobes are explicit and checked. |
+| Audio sync drifts | Assembly is **frame-exact** (`round(t·fps)` per shot) and muxes your original audio. |
 
-This implementation is optimized for the following hardware configuration:
+## Models (details and sources: [docs/model-selection.md](docs/model-selection.md))
 
-- **GPUs**: 2x NVIDIA RTX 3090 (24GB VRAM each)
-  - GPU 0: Primary ComfyUI image generation
-  - GPU 1: Secondary generation or LLM inference
-- **RAM**: 128GB DDR4
-  - Supports large LLM models (up to 72B parameters)
-  - Enables efficient workflow caching
-- **OS**: Ubuntu Linux (22.04 LTS or newer recommended)
-- **Storage**: NVMe SSD recommended for model storage and fast I/O
+| Role | Model | Why |
+|---|---|---|
+| Video | **LTX-2.5** 22B distilled, int8 (default shots) | Best open quality that fits 32 GB; native 24 fps, up to 10 s per clip here |
+| Video, singer on camera / audio-driven | **LTX-2.3** image+audio→video | The only LTX release with an official audio-conditioned workflow (lip-sync) |
+| Keyframes, characters, locations | **Qwen-Image-2.1** (7B DiT, ≤10 reference images, native 2K) | Reference-consistent edits; small enough to run next to everything else |
+| Director / critic | **Qwen3.8-27B** Q4 via llama.cpp (vision-capable) | Strong planner that fits beside nothing else — hence staged GPU use |
+| Lyrics | **faster-whisper large-v3-turbo** | Word timestamps; your own lyrics are aligned to them |
 
----
+**MiniMax-H3** was evaluated and is *not* the default: 33B dense (~66 GB in BF16), reference
+deployment uses 4 GPUs, its context-IR module is API-only, and the open-weight licence requires an
+application for EU users. Its hard 15 s limit would also force cutting the song — which this
+pipeline does anyway (per shot, on musical boundaries), so a backend can be added later.
 
-## 🔑 Key Features
+## Quick start
 
-- **Fully Local**: No cloud dependencies, complete privacy and control
-- **Multi-Agent Architecture**: Specialized agents for different tasks
-- **Flexible LLM Backend**: Support for multiple local LLM options
-- **ComfyUI Integration**: Full API control of ComfyUI workflows
-- **Temporal Consistency**: Advanced techniques for smooth video generation
-- **Music-Driven**: Intelligent analysis of music for creative direction
+```bash
+git clone <this repo> && cd comfyui-agent-music-videos
+scripts/setup.sh check                  # read-only: what is there, what is missing
+export HF_TOKEN=hf_...                  # LTX repos are gated: accept the licence on huggingface.co first
+scripts/setup.sh                        # installs missing packages, ComfyUI, llama.cpp, models (~75 GB), tests
+scripts/setup.sh models lipsync         # +42 GB: LTX-2.3 for singer / audio-driven shots
+systemctl --user enable --now comfyui
 
----
+mvs init ~/videos/night-road            # creates brief.yaml
+cp song.mp3 ~/videos/night-road/        # + optional lyrics.txt / lyrics.lrc, photos in characters/
+$EDITOR ~/videos/night-road/brief.yaml  # theme, style, story notes, characters
+mvs run ~/videos/night-road             # analyze -> plan -> stops at the review gate
+xdg-open ~/videos/night-road/work/board.html
+mvs revise ~/videos/night-road --section S03 --note "make the chorus happen on the road at sunset"
+mvs approve ~/videos/night-road
+mvs run ~/videos/night-road             # refs -> keyframes -> clips -> out/night-road.mp4
+```
 
-## 📖 Table of Contents
+`examples/demo-project/brief.yaml` is a complete brief to start from.
 
-### 00_IMPLEMENTATION_GUIDE.md
-- System Architecture Overview
-- Hardware Requirements & Setup
-- ComfyUI Installation & Configuration
-- Local LLM Setup (Llama 3 / Qwen 2.5)
-- Agent Framework Implementation (LangGraph)
-- Music Analysis Integration
-- Workflow Generation & Execution
-- Testing & Optimization
-- Troubleshooting Guide
+### What the setup script does ([scripts/setup.sh](scripts/setup.sh))
 
-### 01_comfyui_api_control.md
-- ComfyUI API Basics
-- Workflow JSON Structure
-- Programmatic Workflow Execution
-- Queue Management
-- Image Output Handling
-- Error Handling & Recovery
-- Advanced API Techniques
+`check` · `system` (pacman, only what is missing) · `python` · `comfyui` (pinned, validated commit; PyTorch
+wheels chosen by driver version) · `llama` (llama.cpp built for `sm_120`) · `models [group]` · `services`
+(systemd user unit) · `test` (starts ComfyUI if needed, runs `mvs doctor` and `mvs selftest`).
+`--dry-run` prints every command; `--install-driver` is required before it touches the NVIDIA driver.
 
-### 02_local_llm_options.md
-- Hardware Considerations for Dual 3090s
-- Llama 3 Family (8B, 70B)
-- Qwen 2.5 Family (7B, 72B)
-- DeepSeek Models
-- Quantization Strategies (GGUF, AWQ, GPTQ)
-- Inference Frameworks (vLLM, llama.cpp, Ollama)
-- Performance Benchmarks
-- Model Selection Recommendations
+### Health checks
 
-### 03_agent_frameworks.md
-- LangGraph (Recommended)
-- CrewAI
-- AutoGen
-- Framework Comparison Matrix
-- Implementation Examples
-- Integration Patterns
-- Best Practices
+* `mvs doctor` — GPU/driver (Blackwell ≥ 570), RAM, disk, tools, ComfyUI version and device,
+  **every bundled workflow validated against your ComfyUI's node definitions**, model files by exact byte size.
+* `mvs selftest` — tiny real runs: schema-constrained LLM JSON, Qwen-Image text→image and with references,
+  an LTX-2.5 clip, an LTX-2.3 audio-conditioned clip. Steps with missing models are skipped, not failed.
 
-### 04_music_video_techniques.md
-- Music Analysis (Librosa, Essentia)
-- Beat Detection & Tempo Analysis
-- Temporal Consistency Methods
-- AnimateDiff Integration
-- Frame Interpolation
-- Style Transfer Techniques
-- Creative Workflow Patterns
-- Example Pipelines
+## Commands
 
----
+| Command | Does |
+|---|---|
+| `mvs init DIR` | project skeleton + commented `brief.yaml` |
+| `mvs analyze DIR` | tempo grid, sections, repeats, lyrics → `work/analysis.json` |
+| `mvs plan DIR` | treatment → scenebook → check/revise loop → `scenebook.json/.md`, `board.html`, `report.json` |
+| `mvs check DIR [--no-llm]` | re-review after you edited `scenebook.json` |
+| `mvs revise DIR --note "…" [--section S03]` | LLM redoes sections following your words; timing untouched |
+| `mvs approve DIR` | lock the scenebook (refuses on rule errors) |
+| `mvs refs / keyframes / render / assemble DIR` | render stages; `--shots S03-02 --force` to redo single shots |
+| `mvs run DIR [--auto-approve]` | everything, stopping at the review gate |
+| `mvs doctor`, `mvs selftest`, `mvs models status|download`, `mvs llm serve` | environment |
 
-## 🛠️ Technology Stack
+Every stage resumes: artifacts are cached by a hash of their inputs (`work/state.json`).
 
-- **Image Generation**: ComfyUI + Stable Diffusion XL/1.5
-- **LLM Inference**: vLLM / llama.cpp / Ollama
-- **Agent Framework**: LangGraph (recommended) / CrewAI / AutoGen
-- **Music Analysis**: Librosa, Essentia
-- **Video Processing**: FFmpeg, AnimateDiff
-- **API Integration**: Python (requests, websockets)
-- **GPU Management**: CUDA 12.1+, PyTorch 2.0+
+## Configuration
 
----
+Defaults in [`config/default.toml`](config/default.toml); override in `~/.config/mvstudio/config.toml` or
+`<project>/project.toml`. Useful knobs: `planning.cut_style` (calm/medium/fast), `planning.refrain_mode`
+(identical/variants/escalate), `planning.performance_ratio`, `video.max_clip_s`, `video.audio_conditioning`
+(auto/always/never), `video.default_family`.
 
-## 🤝 Contributing
+## Honest status
 
-This is a research and implementation guide repository. Contributions, suggestions, and improvements are welcome! Feel free to:
-- Open issues for questions or clarifications
-- Submit pull requests with corrections or enhancements
-- Share your implementation experiences and results
+* **Verified here (no GPU in the dev sandbox):** all 57 unit/integration tests; audio analysis on a
+  synthetic song with known structure; planning with a scripted stand-in LLM; the template converter;
+  **all patched workflows validated against a real ComfyUI 0.39 `/object_info` and accepted by `/prompt`**;
+  frame-exact assembly with ffmpeg; the setup script (`shellcheck`-clean, dry-run).
+* **Not verified — needs your first run:** actual generation quality and VRAM/time on the 5090,
+  llama.cpp's support of Qwen3.8 + the JSON-schema grammar on your build, model downloads (the sandbox
+  blocks huggingface.co), ASR on real vocals, structure detection on real, dense mixes.
+  `mvs selftest` is the first thing to run; see [docs/architecture.md](docs/architecture.md#known-limits).
+* Licences: Qwen-Image-2.1 is under the **Qwen Research License** (non-commercial); LTX-2.x under the
+  LTX community licence; check both before commercial use.
 
----
-
-## 📝 License
-
-This documentation is provided as-is for educational and research purposes. Individual components and frameworks mentioned have their own licenses - please refer to their respective repositories.
-
----
-
-## 🔗 Useful Links
-
-- [ComfyUI Official Repository](https://github.com/comfyanonymous/ComfyUI)
-- [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
-- [Llama 3 Model Card](https://huggingface.co/meta-llama)
-- [Qwen 2.5 Model Card](https://huggingface.co/Qwen)
-- [vLLM Documentation](https://docs.vllm.ai/)
-
----
-
-## 📧 Contact
-
-For questions or discussions about this implementation:
-- GitHub Issues: Use the Issues tab for technical questions
-- GitHub Discussions: Share your implementations and experiences
-
----
-
-**Last Updated**: March 22, 2026
-
-**Status**: Research & Implementation Guide - Ready for Development
-
----
-
-*Built with ❤️ for the AI and creative coding community*
+The original research notes (2× RTX 3090 era) are in [`docs/legacy/`](docs/legacy/).

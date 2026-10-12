@@ -1,0 +1,31 @@
+title: "Night Road"
+theme: "Leaving a small town at night to become who you were meant to be"
+style: "35mm film, grainy, warm tungsten against deep teal shadows, shallow depth of field, anamorphic flares"
+story_notes: |
+  A young woman packs a car at dusk and drives through the night. We see her hesitate, remember,
+  sing to the empty road. Choruses are always the car on the open road with the horizon opening up;
+  every time it returns the sky is brighter, until it is dawn in the last chorus.
+  I'd like one memory sequence in the bridge (the old kitchen, her friend Joe, laughing).
+mood: [bittersweet, hopeful, nocturnal]
+language: en
+avoid:
+  - gore
+  - text overlays
+  - brand logos
+aspect: "16:9"
+characters:
+  - id: singer
+    name: "Mara"
+    role: performer
+    is_performer: true
+    description: "Woman, early 30s, shoulder-length dark curly hair, olive skin, small scar above the left eyebrow, tired but determined eyes"
+    wardrobes:
+      - {id: default, description: "oversized mustard cardigan over a white t-shirt, blue jeans"}
+      - {id: memory, description: "red summer dress, hair tied up"}
+    images: []          # e.g. ["characters/mara_face.jpg", "characters/mara_fullbody.jpg"]
+  - id: joe
+    name: "Joe"
+    role: supporting
+    description: "Tall man, early 30s, short beard, warm smile, kind eyes"
+    wardrobes:
+      - {id: default, description: "faded denim jacket over a grey hoodie"}

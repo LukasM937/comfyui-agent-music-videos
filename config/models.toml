@@ -1,0 +1,155 @@
+# Model manifest. `mvs models status|download` and scripts/setup.sh read this file.
+# Sizes are exact byte counts from the Hugging Face file listings (checked 2026-10-12).
+# dest = "comfy:<folder>/<file>"  -> <ComfyUI>/models/<folder>/<file>
+# dest = "llm:<file>"             -> ~/models/llm/<file>
+# kind = "snapshot"               -> whole repo into the Hugging Face cache (faster-whisper)
+#
+# group = core     -> everything for the default pipeline (keyframes + LTX-2.5 clips + planner LLM)
+# group = lipsync  -> LTX-2.3 image+audio->video (singer on camera / audio-driven motion)
+# group = asr      -> lyrics transcription
+# group = extras   -> optional speed/quality variants
+
+[[model]]
+id = "ltx25_unet_int8"
+group = "core"
+repo = "Lightricks/LTX-2.5"
+file = "diffusion_models/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
+dest = "comfy:diffusion_models/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
+size = 21504034224
+gated = true
+note = "LTX-2.5 22B distilled, int8. Accept the licence on the repo page first."
+
+[[model]]
+id = "ltx25_text_encoder"
+group = "core"
+repo = "Lightricks/LTX-2.5"
+file = "text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors"
+dest = "comfy:text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors"
+size = 15372969374
+gated = true
+
+[[model]]
+id = "ltx25_video_vae"
+group = "core"
+repo = "Lightricks/LTX-2.5"
+file = "vae/ltx-2.5-video-vae-bf16.safetensors"
+dest = "comfy:vae/ltx-2.5-video-vae-bf16.safetensors"
+size = 1472223346
+gated = true
+
+[[model]]
+id = "ltx25_audio_vae"
+group = "core"
+repo = "Lightricks/LTX-2.5"
+file = "vae/ltx-2.5-audio-vae-bf16.safetensors"
+dest = "comfy:vae/ltx-2.5-audio-vae-bf16.safetensors"
+size = 364866540
+gated = true
+
+[[model]]
+id = "ltx25_upscaler"
+group = "core"
+repo = "Lightricks/LTX-2.5"
+file = "latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
+dest = "comfy:latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
+size = 995778752
+gated = true
+
+[[model]]
+id = "qwen_image_unet"
+group = "core"
+repo = "Comfy-Org/Qwen-Image-2.1"
+file = "diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
+dest = "comfy:diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
+size = 7256783064
+note = "Qwen-Image-2.1 (Qwen Research License: non-commercial)."
+
+[[model]]
+id = "qwen_image_text_encoder"
+group = "core"
+repo = "Comfy-Org/Qwen-Image-2.1"
+file = "text_encoders/qwen3vl_8b_int8_convrot.safetensors"
+dest = "comfy:text_encoders/qwen3vl_8b_int8_convrot.safetensors"
+size = 9350798360
+
+[[model]]
+id = "qwen_image_vae"
+group = "core"
+repo = "Comfy-Org/Qwen-Image-2.1"
+file = "vae/qwen_image_2.1_vae_bf16.safetensors"
+dest = "comfy:vae/qwen_image_2.1_vae_bf16.safetensors"
+size = 675509688
+
+[[model]]
+id = "llm_gguf"
+group = "core"
+repo = "unsloth/Qwen3.8-27B-GGUF"
+file = "Qwen3.8-27B-UD-Q4_K_M.gguf"
+dest = "llm:Qwen3.8-27B-UD-Q4_K_M.gguf"
+size = 16464440224
+note = "Director / critic LLM (Apache-2.0). Q4_K_M leaves room for a 32k context on 32 GB."
+
+[[model]]
+id = "llm_mmproj"
+group = "core"
+repo = "unsloth/Qwen3.8-27B-GGUF"
+file = "mmproj-F16.gguf"
+dest = "llm:mmproj-F16.gguf"
+size = 927607488
+note = "Vision projector: lets the LLM look at keyframes."
+
+# ------------------------------------------------------------------ lipsync (LTX-2.3)
+
+[[model]]
+id = "ltx23_checkpoint"
+group = "lipsync"
+repo = "Lightricks/LTX-2.3-fp8"
+file = "ltx-2.3-22b-dev-fp8.safetensors"
+dest = "comfy:checkpoints/ltx-2.3-22b-dev-fp8.safetensors"
+size = 29145431166
+
+[[model]]
+id = "ltx23_distilled_lora"
+group = "lipsync"
+repo = "Comfy-Org/ltx-2.3"
+file = "split_files/loras/ltx_2.3_22b_distilled_1.1_lora_dynamic_fro09_avg_rank_111_bf16.safetensors"
+dest = "comfy:loras/ltx_2.3_22b_distilled_1.1_lora_dynamic_fro09_avg_rank_111_bf16.safetensors"
+size = 2741024390
+
+[[model]]
+id = "ltx23_upscaler"
+group = "lipsync"
+repo = "Lightricks/LTX-2.3"
+file = "ltx-2.3-spatial-upscaler-x2-1.1.safetensors"
+dest = "comfy:latent_upscale_models/ltx-2.3-spatial-upscaler-x2-1.1.safetensors"
+size = 995743560
+
+[[model]]
+id = "ltx23_text_encoder"
+group = "lipsync"
+repo = "Comfy-Org/ltx-2"
+file = "split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors"
+dest = "comfy:text_encoders/gemma_3_12B_it_fp4_mixed.safetensors"
+size = 9447702218
+
+# ------------------------------------------------------------------ asr
+
+[[model]]
+id = "whisper_turbo"
+group = "asr"
+kind = "snapshot"
+repo = "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
+dest = "hf-cache"
+size = 1617884929
+
+# ------------------------------------------------------------------ extras
+
+[[model]]
+id = "ltx25_unet_nvfp4"
+group = "extras"
+repo = "Lightricks/LTX-2.5"
+file = "diffusion_models/ltx-2.5-22b-distilled-transformer-nvfp4.safetensors"
+dest = "comfy:diffusion_models/ltx-2.5-22b-distilled-transformer-nvfp4.safetensors"
+size = 18721548408
+gated = true
+note = "Blackwell-native FP4 (RTX 50xx). Faster and smaller, quality untested here: compare with int8 via `mvs selftest` before switching."
